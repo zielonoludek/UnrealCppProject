@@ -1,29 +1,49 @@
 #include "Turret.h"
 #include "Components/SphereComponent.h"
 
-// Sets default values
 ATurret::ATurret()
 {
 	Root = CreateDefaultSubobject<USceneComponent>("Root");
 	RootComponent = Root;
 
 	Sphere = CreateDefaultSubobject<USphereComponent>("Sphere");
+	Sphere->SetupAttachment(Root);
+	Sphere->SetSphereRadius(VisibiltyRadius);
+	Sphere->OnComponentBeginOverlap.AddDynamic(this, &ATurret::HandleBeginOverlap);
+
+	YawRoot = CreateDefaultSubobject<USceneComponent>("YawRoot");
+	PitchRoot = CreateDefaultSubobject<USceneComponent>("PitchRoot");
+
+	YawRoot->SetupAttachment(Root);
+	PitchRoot->SetupAttachment(YawRoot);
 
 	PrimaryActorTick.bCanEverTick = true;
 }
-
 // Called when the game starts or when spawned
 void ATurret::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame
 void ATurret::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	
+	YawRoot->AddLocalRotation(FRotator(0, YawSpeed * DeltaTime, 0));
+	
+	FRotator PitchRotator;
+	PitchRotator.Pitch = FMath::Cos(GetWorld()->GetTimeSeconds()) * 50.f;
+	PitchRoot->SetRelativeRotation(PitchRotator);
 }
 
-///https://changemakereducation.sharepoint.com/sites/FG23GP_ALL-GameprogrammingwithC/_layouts/15/stream.aspx?id=%2Fsites%2FFG23GP%5FALL%2DGameprogrammingwithC%2FDelade%20dokument%2FGeneral%2FRecordings%2FLecture%5F24%2D03%2D20%20%28Part%201%29%2Emp4&referrer=StreamWebApp%2EWeb&referrerScenario=AddressBarCopied%2Eview
+void ATurret::HandleBeginOverlap(
+	UPrimitiveComponent* OverlappedComp, 
+	AActor* OtherActor, 
+	UPrimitiveComponent* OtherComp, 
+	int32 OtherBodyIndex, 
+	bool bFromSweep, 
+	const FHitResult& SweepResult) 
+{
+	UE_LOG(LogTemp, Log, TEXT("Begin Overlap: %s"), *OtherActor->GetName());
+}
