@@ -14,7 +14,6 @@ UCLASS()
 class CPPPROJECT_API ATurret : public AActor
 {
 	GENERATED_BODY()
-	
 public:	
 	// Sets default values for this actor's properties
 	ATurret();
@@ -32,26 +31,25 @@ protected:
 		bool bFromSweep, 
 		const FHitResult& SweepResult);
 
+	UFUNCTION() void HandleEndOverlap(
+		UPrimitiveComponent* OverlappedComp,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex
+		);
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 private:
-	UPROPERTY(VisibleAnywhere) 
-	USceneComponent* Root = nullptr;
+	UPROPERTY(VisibleAnywhere) USceneComponent* Root = nullptr;
+	UPROPERTY(VisibleAnywhere) USphereComponent* Sphere = nullptr;
+	UPROPERTY(VisibleAnywhere) USceneComponent* YawRoot = nullptr;
+	UPROPERTY(VisibleAnywhere) USceneComponent* PitchRoot = nullptr;
 	
-	UPROPERTY(VisibleAnywhere) 
-	USphereComponent* Sphere = nullptr;
+	UPROPERTY(EditAnywhere) float YawSpeed = 5.f;
+	UPROPERTY(EditAnywhere) float VisibiltyRadius = 1000.f;
 
-	UPROPERTY(EditAnywhere)
-	float VisibiltyRadius = 1000.f;
-
-	UPROPERTY(VisibleAnywhere) 
-	USceneComponent* YawRoot = nullptr;
-
-	UPROPERTY(VisibleAnywhere)
-	USceneComponent* PitchRoot = nullptr;
-
-	UPROPERTY(EditAnywhere)
-	float YawSpeed = 500.f;
+	UPROPERTY() AActor* Target = nullptr;
 };

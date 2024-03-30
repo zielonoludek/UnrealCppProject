@@ -1,5 +1,7 @@
 #include "Turret.h"
 #include "Components/SphereComponent.h"
+#include "GameFramework/Character.h"
+#include "Kismet/KismetMathLibrary.h"
 
 ATurret::ATurret()
 {
@@ -10,6 +12,7 @@ ATurret::ATurret()
 	Sphere->SetupAttachment(Root);
 	Sphere->SetSphereRadius(VisibiltyRadius);
 	Sphere->OnComponentBeginOverlap.AddDynamic(this, &ATurret::HandleBeginOverlap);
+	Sphere->OnComponentEndOverlap.AddDynamic(this, &ATurret::HandleEndOverlap);
 
 	YawRoot = CreateDefaultSubobject<USceneComponent>("YawRoot");
 	PitchRoot = CreateDefaultSubobject<USceneComponent>("PitchRoot");
@@ -19,22 +22,25 @@ ATurret::ATurret()
 
 	PrimaryActorTick.bCanEverTick = true;
 }
-// Called when the game starts or when spawned
 void ATurret::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
-// Called every frame
 void ATurret::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
-	
-	YawRoot->AddLocalRotation(FRotator(0, YawSpeed * DeltaTime, 0));
-	
-	FRotator PitchRotator;
-	PitchRotator.Pitch = FMath::Cos(GetWorld()->GetTimeSeconds()) * 50.f;
-	PitchRoot->SetRelativeRotation(PitchRotator);
+	if (Target)
+	{
+		Super::Tick(DeltaTime);
+
+		FVector CurrentDirection = PitchRoot->GetForwardVector();
+		FVector TargetDirection = Target->GetActorLocation() - PitchRoot->GetComponentLocation();
+		UKismetMathLibrary::Vector_SlerpVectorToDirection(CurrentDirection, TargetDirection, YawSpeed * DeltaTime);
+
+		FRotator TargetRotation = UKismetMathLibrary::MakeRotFromX(CurrentDirection);
+		YawRoot->SetWorldRotation(FRotator(0, TargetRotation.Yaw, 0));
+		PitchRoot->SetRelativeRotation(FRotator(TargetRotation.Pitch, 0, 0));
+	}
 }
 
 void ATurret::HandleBeginOverlap(
@@ -45,5 +51,15 @@ void ATurret::HandleBeginOverlap(
 	bool bFromSweep, 
 	const FHitResult& SweepResult) 
 {
-	UE_LOG(LogTemp, Log, TEXT("Begin Overlap: %s"), *OtherActor->GetName());
+	//UE_LOG(LogTemp, Log, TEXT("Begin Overlap: %s"), *OtherActor->GetName());
+	if (OtherActor->IsA<ACharacter>()) Target = OtherActor;
+}
+void ATurret::HandleEndOverlap(
+	UPrimitiveComponent* OverlappedComp,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex
+)
+{
+	if (OtherActor == Target) Target = nullptr;
 }
